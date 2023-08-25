@@ -1,66 +1,39 @@
 #include "main.h"
 
-void print_buffer(char buffer[], int *buff_ind);
-
-/**
- * _printf - Printf function
- * @format: format.
- * Return: Printed chars.
- */
 int _printf(const char *format, ...)
 {
-	int i, printed = 0, printed_chars = 0;
-	int flags, width, precision, size, buff_ind = 0;
-	va_list list;
-	char buffer[BUFF_SIZE];
+	int (*function)(va_list, char *, int);
+	int len = 0, i = 0;
+	;
+	char *buffer = malloc(sizeof(char) * BUFFER_SIZE);
+	int position = 0;
 
-	if (format == NULL)
-		return (-1);
+	va_list args;
+	va_start(args, format);
 
-	va_start(list, format);
-
-	for (i = 0; format && format[i] != '\0'; i++)
+	while (*format != '\0')
 	{
-		if (format[i] != '%')
+		if (*format == '%')
 		{
-			buffer[buff_ind++] = format[i];
-			if (buff_ind == BUFF_SIZE)
-				print_buffer(buffer, &buff_ind);
-			/* write(1, &format[i], 1);*/
-			printed_chars++;
+			format++;
+			function = strategy(*format);
+			len = function(args, buffer, position);
 		}
 		else
 		{
-			print_buffer(buffer, &buff_ind);
-			flags = get_flags(format, &i);
-			width = get_width(format, &i, list);
-			precision = get_precision(format, &i, list);
-			size = get_size(format, &i);
-			++i;
-			printed = handle_print(format, &i, list, buffer,
-								   flags, width, precision, size);
-			if (printed == -1)
-				return (-1);
-			printed_chars += printed;
+			handle_buffer(*format, buffer, position);
+			len++;
 		}
+		for (position = len; position > 1024; position -= 1024)
+			;
+		format++;
+		i++;
 	}
 
-	print_buffer(buffer, &buff_ind);
+	print_buffer(buffer, position);
 
-	va_end(list);
+	va_end(args);
 
-	return (printed_chars);
-}
-
-/**
- * print_buffer - Prints the contents of the buffer if it exist
- * @buffer: Array of chars
- * @buff_ind: Index at which to add next char, represents the length.
- */
-void print_buffer(char buffer[], int *buff_ind)
-{
-	if (*buff_ind > 0)
-		write(1, &buffer[0], *buff_ind);
-
-	*buff_ind = 0;
+	free(buffer);
+	return (len);
 }
